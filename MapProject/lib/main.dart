@@ -99,9 +99,17 @@ class _MyHomePageState extends State<MyHomePage> {
                 final String nama = markerData['nama'];
                 final String kategori = markerData['kategori'];
                 final String keterangan = markerData['keterangan'];
+                final String jamBuka = markerData['jamBuka'];
+                final String jamTutup = markerData['jamTutup'];
 
-                allMarkers.add(_createMarker(double.parse(lat),
-                    double.parse(lng), nama, kategori, keterangan));
+                allMarkers.add(_createMarker(
+                    double.parse(lat),
+                    double.parse(lng),
+                    nama,
+                    kategori,
+                    keterangan,
+                    jamBuka,
+                    jamTutup));
               } catch (e) {
                 logger.d('Error processing marker data: $e');
               }
@@ -123,7 +131,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Marker _createMarker(double latitude, double longitude, String nama,
-      String kategori, String keterangan) {
+      String kategori, String keterangan, String jamBuka, String jamTutup) {
     IconData iconData;
     Color iconColor;
 
@@ -157,7 +165,7 @@ class _MyHomePageState extends State<MyHomePage> {
       child: IconButton(
         onPressed: () {
           _showLocationInfoDialog(
-              latitude, longitude, nama, kategori, keterangan);
+              latitude, longitude, nama, kategori, keterangan, jamBuka, jamTutup);
         },
         icon: Icon(iconData, color: iconColor),
       ),
@@ -204,68 +212,118 @@ class _MyHomePageState extends State<MyHomePage> {
           keterangan: "",
           lat: tappedPoint.latitude,
           lng: tappedPoint.longitude,
+          jamBuka: "",
+          jamTutup: "",
         );
 
         return AlertDialog(
           title: Text("Tambah Data Lokasi"),
-          content: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              TextField(
-                decoration: InputDecoration(labelText: "Nama"),
-                onChanged: (value) {
-                  newPlace.nama = value;
-                },
-              ),
-              const Padding(
-                padding: EdgeInsets.only(left: 0, top: 30),
-                child: Text(
-                  "Pilih Kategori Tempat:",
-                  style: TextStyle(
-                    fontSize: 16, // Adjust the font size as needed
+          content: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextField(
+                  decoration: InputDecoration(labelText: "Nama"),
+                  onChanged: (value) {
+                    newPlace.nama = value;
+                  },
+                ),
+                const Padding(
+                  padding: EdgeInsets.only(left: 0, top: 30),
+                  child: Text(
+                    "Pilih Kategori Tempat:",
+                    style: TextStyle(
+                      fontSize: 16,
+                    ),
                   ),
                 ),
-              ),
-              DropdownButton<String>(
-                isExpanded: true,
-                value: newPlace.kategori,
-                items: <String>[
-                  'Rumah Makan',
-                  'Hotel',
-                  'Things To do',
-                  'Kesehatan',
-                ].map<DropdownMenuItem<String>>((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  setState(() {
-                    newPlace.kategori = value!;
-                  });
-                },
-              ),
-              TextField(
-                decoration: InputDecoration(labelText: "Keterangan"),
-                onChanged: (value) {
-                  newPlace.keterangan = value;
-                },
-              ),
-              const SizedBox(height: 8), // Add spacing
-            ],
+                DropdownButtonFormField<String>(
+                  isExpanded: true,
+                  value: newPlace.kategori,
+                  items: <String>[
+                    'Rumah Makan',
+                    'Hotel',
+                    'Things To do',
+                    'Kesehatan',
+                  ].map<DropdownMenuItem<String>>((String value) {
+                    return DropdownMenuItem<String>(
+                      value: value,
+                      child: Text(value),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      newPlace.kategori = value!;
+                    });
+                  },
+                ),
+                TextField(
+                  decoration: InputDecoration(labelText: "Keterangan"),
+                  onChanged: (value) {
+                    newPlace.keterangan = value;
+                  },
+                ),
+                InkWell(
+                  onTap: () async {
+                    TimeOfDay? selectedTime = await showTimePicker(
+                      context: context,
+                      initialTime: TimeOfDay.now(),
+                    );
+
+                    if (selectedTime != null) {
+                      newPlace.jamBuka =
+                          "${selectedTime.hour}:${selectedTime.minute}";
+                      setState(() {});
+                    }
+                  },
+                  child: IgnorePointer(
+                    child: TextField(
+                      controller: TextEditingController(text: newPlace.jamBuka),
+                      decoration: InputDecoration(
+                        labelText: "Jam Buka",
+                      ),
+                    ),
+                  ),
+                ),
+
+                // Replace the TextField for "Jam Tutup" with a showTimePicker
+                InkWell(
+                  onTap: () async {
+                    TimeOfDay? selectedTime = await showTimePicker(
+                      context: context,
+                      initialTime: TimeOfDay.now(),
+                    );
+
+                    if (selectedTime != null) {
+                      newPlace.jamTutup =
+                          "${selectedTime.hour}:${selectedTime.minute}";
+                      setState(() {});
+                    }
+                  },
+                  child: IgnorePointer(
+                    child: TextField(
+                      controller:
+                          TextEditingController(text: newPlace.jamTutup),
+                      decoration: InputDecoration(
+                        labelText: "Jam Tutup",
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+              ],
+            ),
           ),
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(); // Close the dialog
+                Navigator.of(context).pop();
               },
               child: Text("Cancel"),
             ),
             TextButton(
               onPressed: () async {
                 try {
-                  // Add the new marker with the gathered data
                   setState(() {
                     allMarkers.add(_createMarker(
                       tappedPoint.latitude,
@@ -273,26 +331,23 @@ class _MyHomePageState extends State<MyHomePage> {
                       newPlace.nama,
                       newPlace.kategori,
                       newPlace.keterangan,
+                      newPlace.jamBuka,
+                      newPlace.jamTutup,
                     ));
                   });
 
-                  // Kirim data ke api
                   await _sendDataToApi(newPlace);
-
-                  // Ambil Markernya
                   await _fetchMarkersFromApi();
 
-                  // Tutup ketika semua sudah terkirim dan terambil
                   Navigator.of(context).pop();
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text("Data Map Berhasil Ditambahkan"),
                       duration: Duration(seconds: 3),
                     ),
-                  );// Close the dialog
+                  );
                 } catch (e) {
                   print('Error adding marker: $e');
-                  // Handle the error, e.g., show a Snackbar
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text("Error adding marker: $e"),
@@ -311,40 +366,49 @@ class _MyHomePageState extends State<MyHomePage> {
 
   // Menampilkan Informasi Lebih Lanjut
   void _showLocationInfoDialog(double latitude, double longitude, String nama,
-      String kategori, String keterangan) {
+      String kategori, String keterangan, String jamBuka, String jamTutup) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
           title: Text(nama),
-          content: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                children: [
-                  const Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Latitude'),
-                      Text('Longitude'),
-                      Text('Kategori'),
-                      Text('Keterangan'),
-                    ],
-                  ),
-                  SizedBox(width: 8),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(': $latitude'),
-                      Text(': $longitude'),
-                      Text(': $kategori'),
-                      Text(': $keterangan'),
-                    ],
-                  ),
-                ],
-              ),
-            ],
+          content: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Latitude'),
+                        Text('Longitude'),
+                        Text('Kategori'),
+                        Text('Jam Buka'),
+                        Text('Jam Tutup'),
+                        Text('Keterangan'),
+                      ],
+                    ),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(': $latitude'),
+                          Text(': $longitude'),
+                          Text(': $kategori'),
+                          Text(': $jamBuka'),
+                          Text(': $jamTutup'),
+                          Text(': $keterangan'),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
           actions: [
             TextButton(
@@ -355,10 +419,10 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
           ],
         );
+
       },
     );
   }
-
 
   void _moveToCurrentLocation() {}
 
@@ -417,9 +481,11 @@ class _MyHomePageState extends State<MyHomePage> {
               final String nama = markerData['nama'];
               final String kategori = markerData['kategori'];
               final String keterangan = markerData['keterangan'];
+              final String jamBuka = markerData['jamBuka'];
+              final String jamTutup = markerData['jamTutup'];
 
               allMarkers.add(_createMarker(double.parse(lat), double.parse(lng),
-                  nama, kategori, keterangan));
+                  nama, kategori, keterangan, jamBuka, jamTutup));
             } catch (e) {
               logger.d('Error processing marker data: $e');
             }
@@ -449,6 +515,8 @@ class _MyHomePageState extends State<MyHomePage> {
         'keterangan': placeData.keterangan,
         'lat': placeData.lat.toString(),
         'lng': placeData.lng.toString(),
+        'jamBuka': placeData.jamBuka,
+        'jamTutup': placeData.jamTutup,
       },
     );
 
@@ -543,9 +611,14 @@ class _MyHomePageState extends State<MyHomePage> {
                         );
                       }).toList(),
                       onChanged: (value) {
+                        logger.d(
+                            'Before _filterMarkers: $selectedFilterCategory');
                         setState(() {
                           selectedFilterCategory = value!;
+                          // _filterMarkers(selectedFilterCategory);
                         });
+                        logger
+                            .d('After _filterMarkers: $selectedFilterCategory');
                       },
                     ),
                   ),

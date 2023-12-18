@@ -26,9 +26,9 @@ return function (App $app) {
         $sql = "SELECT * FROM `$nim` WHERE kategori=:kategori";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([":kategori" => $kategori]);
-        $result = $stmt->fetch();
+        $result = $stmt->fetchAll(); // Menggunakan fetchAll() untuk mendapatkan semua baris hasil
         return $response->withJson(["status" => "success", "data" => $result], 200);
-    });
+    });    
     
     $app->post("/mapproject/{nim}/", function (Request $request, Response $response, $args) {
         $nim = $args["nim"];
@@ -36,7 +36,7 @@ return function (App $app) {
         
         $nim = preg_replace("/[^a-zA-Z0-9_]+/", "", $nim);
     
-        $sql = "INSERT INTO `$nim` (nama, kategori, keterangan, lat, lng) VALUES (:nama, :kategori, :keterangan, :lat, :lng)";
+        $sql = "INSERT INTO `$nim` (nama, kategori, keterangan, lat, lng, jamBuka, jamTutup) VALUES (:nama, :kategori, :keterangan, :lat, :lng, :jamBuka, :jamTutup)";
         $stmt = $this->db->prepare($sql);
     
         $data = [
@@ -45,6 +45,8 @@ return function (App $app) {
             ":keterangan" => $mapProject["keterangan"],
             ":lat" => $mapProject["lat"],
             ":lng" => $mapProject["lng"],
+            ":jamBuka" => $mapProject["jamBuka"],
+            ":jamTutup" => $mapProject["jamTutup"],
         ];
     
         if ($stmt->execute($data)) {

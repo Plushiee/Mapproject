@@ -4,14 +4,12 @@ import 'model/MapProject.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:location/location.dart';
-import 'package:maps_launcher/maps_launcher.dart';
-import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:http/http.dart' as http;
 import 'package:logger/logger.dart';
+import 'package:maps_launcher/maps_launcher.dart';
 
 void main() {
   runApp(const MyApp());
@@ -54,7 +52,7 @@ class _MyHomePageState extends State<MyHomePage> {
   bool isLoading = true;
   bool isManualMarkerAdditionMode = false;
   var logger = Logger();
-  double currentZoom = 13.0;
+  double currentZoom = 15.0;
   late MapController mapController;
   String? tappedLatitude;
   String? tappedLongitude;
@@ -164,10 +162,10 @@ class _MyHomePageState extends State<MyHomePage> {
       point: LatLng(latitude, longitude),
       child: IconButton(
         onPressed: () {
-          _showLocationInfoDialog(
-              latitude, longitude, nama, kategori, keterangan, jamBuka, jamTutup);
+          _showLocationInfoDialog(latitude, longitude, nama, kategori,
+              keterangan, jamBuka, jamTutup);
         },
-        icon: Icon(iconData, color: iconColor),
+        icon: Icon(iconData, color: iconColor, size: 30.0,),
       ),
     );
   }
@@ -280,13 +278,11 @@ class _MyHomePageState extends State<MyHomePage> {
                     child: TextField(
                       controller: TextEditingController(text: newPlace.jamBuka),
                       decoration: InputDecoration(
-                        labelText: "Jam Buka",
+                        labelText: "Atur Jam Buka",
                       ),
                     ),
                   ),
                 ),
-
-                // Replace the TextField for "Jam Tutup" with a showTimePicker
                 InkWell(
                   onTap: () async {
                     TimeOfDay? selectedTime = await showTimePicker(
@@ -305,7 +301,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       controller:
                           TextEditingController(text: newPlace.jamTutup),
                       decoration: InputDecoration(
-                        labelText: "Jam Tutup",
+                        labelText: "Atur Jam Tutup",
                       ),
                     ),
                   ),
@@ -407,24 +403,39 @@ class _MyHomePageState extends State<MyHomePage> {
                     ),
                   ],
                 ),
+                SizedBox(height: 10),
+                Row(
+                  children: [
+                    ElevatedButton(
+                      style: ButtonStyle(
+                        shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+                          RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        ),
+                      ),
+                      onPressed: () {
+                        MapsLauncher.launchCoordinates(latitude, longitude);
+                      },
+                      child: Text('Buka di Google Maps'),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(); // Close the dialog
+                Navigator.of(context).pop();
               },
               child: Text("OK"),
             ),
           ],
         );
-
       },
     );
   }
-
-  void _moveToCurrentLocation() {}
 
   // Filter data berdasarkan kategori
   Future<void> _filterMarkers(String category) async {
